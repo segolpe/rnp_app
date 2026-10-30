@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RNP-app Registro de Nuevos Predios</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Librerías para Generación de PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              real: '#2B5266',
+              relajado: '#C8D6DF',
+              denim: '#738896',
+              niebla: '#BCC7C7',
+              neutro: '#E6E5E0',
+              orange: '#E07A5F',
+              orangeHover: '#D0694E'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes slideDown {
+      from { transform: translate(-50%, -20px); opacity: 0; }
+      to { transform: translate(-50%, 0); opacity: 1; }
+    }
+    .toast-animate {
+      animation: slideDown 0.3s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-brand-neutro text-slate-800 font-sans min-h-screen pb-12">
+
+  <!-- CONFIGURACIÓN DE SCRIPT URL -->
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSwQfabv0oQDczx_i119-Oj3KrRnXjnvwpN23SvKxoPpgUQ_EXaqlPYQYcHLylBokM/exec"; // Reemplaza por tu URL de Google Apps Script (/exec)
+  </script>
+
+  <!-- CONTENEDOR DE TOASTS ABSOLUTAMENTE CENTRADOS -->
+  <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 pointer-events-none w-11/12 max-w-sm"></div>
+
+  <!-- MODAL PARA CAPTURA DE CÁMARA EN VIVO -->
+  <div id="camera-modal" class="fixed inset-0 bg-black bg-opacity-90 z-50 hidden flex flex-col items-center justify-between p-4">
+    <div class="w-full max-w-md flex justify-between items-center text-white p-2">
+      <span class="text-sm font-semibold">Capturar Fotografía</span>
+      <button type="button" onclick="cerrarCamara()" class="text-white text-xl p-2"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="relative w-full max-w-md flex-1 flex items-center justify-center overflow-hidden rounded-2xl bg-black">
+      <video id="webcam" autoplay playsinline class="w-full h-full object-cover"></video>
+      <canvas id="camera-canvas" class="hidden"></canvas>
+    </div>
+    <div class="w-full max-w-md py-4 flex justify-center items-center">
+      <button type="button" onclick="tomarFotoCamara()" class="w-16 h-16 rounded-full bg-white border-4 border-brand-orange flex items-center justify-center text-brand-orange text-2xl shadow-lg active:scale-90 transition">
+        <i class="fa-solid fa-camera"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- PANTALLA DE LOGIN -->
+  <div id="login-screen" class="fixed inset-0 bg-brand-real bg-opacity-95 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-brand-niebla">
+      <div class="text-center mb-6">
+        <div class="bg-brand-relajado text-brand-real w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl shadow-inner">
+          <i class="fa-solid fa-map-location-dot"></i>
+        </div>
+        <h1 class="text-xl font-bold text-brand-real">RNP-app</h1>
+        <p class="text-xs text-brand-denim font-medium">Registro de Nuevos Predios</p>
+      </div>
+      <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Correo Electrónico</label>
+          <input type="email" id="login-email" required class="w-full border border-brand-niebla rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-real" placeholder="ejemplo@correo.com">
+        </div>
+        <button type="submit" class="w-full bg-brand-real hover:bg-slate-800 text-white font-bold py-3 rounded-lg text-sm shadow transition">
+          Ingresar
+        </button>
+      </form>
+
+      <!-- Pie de página de Autor/Marca -->
+      <div class="mt-6 pt-4 border-t border-brand-niebla/40 text-center text-[11px] text-brand-denim leading-relaxed font-medium">
+        <p class="font-bold text-brand-real">ARQCAPP - Soluciones para la Construcción</p>
+        <p>Arquitecto JUAN CARLOS ALVAREZ SILVA</p>
+        <p class="text-[10px] opacity-75 mt-0.5">2026</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERFAZ PRINCIPAL -->
+  <div id="main-app" class="hidden">
+    <!-- Header -->
+    <header class="bg-brand-real text-white p-4 shadow-md sticky top-0 z-40">
+      <div class="max-w-md mx-auto flex justify-between items-center">
+        <div>
+          <h1 class="text-lg font-bold tracking-wide">RNP-app</h1>
+          <p class="text-xs text-brand-relajado" id="user-display">Usuario</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="network-badge" class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-600 text-white flex items-center gap-1 shadow-sm">
+            <span id="network-dot" class="w-2 h-2 rounded-full bg-white animate-pulse"></span> <span id="network-text">ONLINE</span>
+          </span>
+          <button onclick="logout()" class="text-xs bg-slate-800/40 hover:bg-slate-900/60 text-white px-3 py-1.5 rounded-lg border border-brand-denim/40">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="max-w-md mx-auto p-4">
+
+      <!-- ================= PÁGINA 1: DASHBOARD ================= -->
+      <div id="page-dashboard" class="space-y-5">
+        
+        <!-- Acciones Principales y Sincronización -->
+        <div class="flex items-center justify-between gap-2">
+          <button onclick="mostrarPagina('form')" class="flex-1 bg-brand-real hover:bg-slate-800 text-white py-3 px-4 rounded-xl text-sm font-bold shadow transition flex items-center justify-center gap-2 active:scale-95">
+            <i class="fa-solid fa-plus text-brand-relajado"></i> Nuevo Registro
+          </button>
+          <button onclick="syncData()" id="sync-btn" class="bg-brand-orange hover:bg-brand-orangeHover text-white py-3 px-4 rounded-xl text-sm font-bold shadow flex items-center justify-center gap-2 transition active:scale-95">
+            <i class="fa-solid fa-rotate"></i> Sincronizar
+          </button>
+        </div>
+
+        <!-- Tarjetas Estadísticas -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-white rounded-xl p-3 shadow-sm border border-brand-niebla">
+            <span class="text-[10px] font-bold uppercase text-brand-denim block">Total Predios</span>
+            <span id="stat-total" class="text-2xl font-black text-brand-real">0</span>
+          </div>
+          <div class="bg-white rounded-xl p-3 shadow-sm border border-brand-niebla">
+            <span class="text-[10px] font-bold uppercase text-brand-denim block">Pendientes Sync</span>
+            <span id="stat-pending" class="text-2xl font-black text-brand-orange">0</span>
+          </div>
+          <div class="bg-white rounded-xl p-3 shadow-sm border border-brand-niebla">
+            <span class="text-[10px] font-bold uppercase text-brand-denim block">Segovia (NP-S)</span>
+            <span id="stat-segovia" class="text-2xl font-black text-slate-700">0</span>
+          </div>
+          <div class="bg-white rounded-xl p-3 shadow-sm border border-brand-niebla">
+            <span class="text-[10px] font-bold uppercase text-brand-denim block">Los Pérez (NP-L)</span>
+            <span id="stat-perez" class="text-2xl font-black text-slate-700">0</span>
+          </div>
+        </div>
+
+        <!-- Filtro por Pestañas (Cards Separados) -->
+        <div class="bg-white rounded-xl p-1.5 shadow-sm border border-brand-niebla flex gap-1">
+          <button onclick="filtrarCentro('todos')" id="tab-todos" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition bg-brand-real text-white">Todos</button>
+          <button onclick="filtrarCentro('Segovia')" id="tab-segovia" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition text-brand-denim hover:bg-slate-100">Segovia</button>
+          <button onclick="filtrarCentro('Los Pérez')" id="tab-perez" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition text-brand-denim hover:bg-slate-100">Los Pérez</button>
+        </div>
+
+        <!-- Lista de Registros -->
+        <div id="records-list" class="space-y-3">
+          <!-- Se renderizan dinámicamente -->
+        </div>
+
+      </div>
+
+
+      <!-- ================= PÁGINA 2: FORMULARIO DE REGISTRO ================= -->
+      <div id="page-form" class="hidden space-y-4">
+        
+        <button onclick="mostrarPagina('dashboard')" class="text-xs font-bold text-brand-real hover:underline flex items-center gap-1">
+          <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
+        </button>
+
+        <form id="predio-form" onsubmit="guardarPredio(event)" class="bg-white rounded-2xl shadow-sm border border-brand-niebla p-5 space-y-4">
+          
+          <h2 class="text-sm font-bold text-brand-real uppercase tracking-wider border-b border-brand-niebla/40 pb-2">Formulario de Registro</h2>
+
+          <!-- Centro Poblado y NP -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Centro Poblado</label>
+              <select id="centroPoblado" onchange="actualizarNP()" class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm font-medium bg-slate-50">
+                <option value="Segovia">Segovia</option>
+                <option value="Los Pérez">Los Pérez</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Consecutivo NP</label>
+              <input type="text" id="np" readonly class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm font-bold bg-brand-relajado/30 text-brand-real">
+            </div>
+          </div>
+
+          <!-- Sector / Barrio (Dinámico) -->
+          <div>
+            <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Sector / Barrio</label>
+            <input type="text" id="sectorBarrio" list="sector-list" required placeholder="Escribe o selecciona sector..." class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-real">
+            <datalist id="sector-list"></datalist>
+          </div>
+
+          <!-- Coordenadas GPS -->
+          <div>
+            <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Coordenadas GPS</label>
+            <div class="flex gap-2">
+              <input type="text" id="coordenadas" placeholder="0.0000, -0.0000" class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm bg-slate-50" readonly>
+              <button type="button" onclick="obtenerGPS()" class="bg-brand-real hover:bg-slate-800 text-white px-3 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-1 transition active:scale-95">
+                <i class="fa-solid fa-location-crosshairs"></i> GPS
+              </button>
+            </div>
+          </div>
+
+          <!-- Tipo y Estado -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Tipo Predio</label>
+              <select id="tipoPredio" class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm">
+                <option value="Residencial">Residencial</option>
+                <option value="Comercial">Comercial</option>
+                <option value="Mixto">Mixto</option>
+                <option value="Institucional">Institucional</option>
+                <option value="Lote">Lote</option>
+                <option value="Parcela">Parcela</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Estado</label>
+              <select id="estado" class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm">
+                <option value="Bueno">Bueno</option>
+                <option value="Regular">Regular</option>
+                <option value="Malo">Malo</option>
+                <option value="No aplica">No aplica</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Servicios Básicos -->
+          <div>
+            <label class="block text-xs font-semibold text-brand-denim uppercase mb-2">Servicios Básicos</label>
+            <div class="grid grid-cols-2 gap-2 text-sm">
+              <label class="flex items-center gap-2 border border-brand-niebla/60 p-2 rounded-lg bg-slate-50/50"><input type="checkbox" name="servicio" value="Agua"> Agua</label>
+              <label class="flex items-center gap-2 border border-brand-niebla/60 p-2 rounded-lg bg-slate-50/50"><input type="checkbox" name="servicio" value="Luz"> Luz</label>
+              <label class="flex items-center gap-2 border border-brand-niebla/60 p-2 rounded-lg bg-slate-50/50"><input type="checkbox" name="servicio" value="Alcantarillado"> Alcantarillado</label>
+              <label class="flex items-center gap-2 border border-brand-niebla/60 p-2 rounded-lg bg-slate-50/50"><input type="checkbox" name="servicio" value="Gas"> Gas</label>
+            </div>
+          </div>
+
+          <!-- Propietario -->
+          <div>
+            <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Nombre y Apellidos</label>
+            <input type="text" id="nombreApellidos" required class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm">
+          </div>
+
+          <!-- Documento y Celular -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Documento ID</label>
+              <input type="number" id="documentoId" required class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Celular</label>
+              <input type="tel" id="numeroCelular" required class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm">
+            </div>
+          </div>
+
+          <!-- Observaciones -->
+          <div>
+            <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Observaciones</label>
+            <textarea id="observaciones" rows="2" class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm"></textarea>
+          </div>
+
+          <!-- Registro Fotográfico -->
+          <div>
+            <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Registro Fotográfico</label>
+            <input type="file" id="fotoFileInput" accept="image/*" onchange="previewFotoArchivo(event)" class="hidden">
+            
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" onclick="abrirCamara()" class="bg-brand-real hover:bg-slate-800 text-white py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow transition active:scale-95">
+                <i class="fa-solid fa-camera text-brand-relajado text-base"></i> Abrir Cámara
+              </button>
+              <button type="button" onclick="document.getElementById('fotoFileInput').click()" class="bg-slate-100 hover:bg-slate-200 text-brand-real border border-brand-niebla py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition active:scale-95">
+                <i class="fa-solid fa-folder-open text-brand-denim text-base"></i> Subir Archivo
+              </button>
+            </div>
+
+            <div id="foto-preview-container" class="hidden mt-3">
+              <img id="foto-preview" class="w-full h-40 object-cover rounded-lg border border-brand-niebla">
+              <p id="foto-name" class="text-xs text-brand-denim mt-1 italic text-center"></p>
+            </div>
+          </div>
+
+          <!-- Botón Guardar -->
+          <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-xl text-sm shadow transition flex items-center justify-center gap-2 active:scale-95">
+            <i class="fa-solid fa-floppy-disk"></i> Guardar Registro Local
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LÓGICO -->
+  <script>
+    let currentFotoBase64 = "";
+    let mediaStream = null;
+    let centroFiltroActual = "todos";
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      let bgColors = 'bg-brand-real text-white border-brand-denim';
+      let icon = '<i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>';
+
+      if (type === 'error') {
+        bgColors = 'bg-red-900 text-white border-red-700';
+        icon = '<i class="fa-solid fa-triangle-exclamation text-brand-orange text-lg"></i>';
+      } else if (type === 'info') {
+        bgColors = 'bg-slate-800 text-white border-brand-niebla';
+        icon = '<i class="fa-solid fa-circle-info text-brand-relajado text-lg"></i>';
+      }
+
+      toast.className = `pointer-events-auto flex items-center justify-center text-center gap-3 px-4 py-3 rounded-xl shadow-xl border text-sm font-medium toast-animate ${bgColors} w-full`;
+      toast.innerHTML = `${icon} <span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function init() {
+      const user = localStorage.getItem('rnp_user');
+      if (user) {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('main-app').classList.remove('hidden');
+        document.getElementById('user-display').innerText = user;
+        renderDashboard();
+        actualizarNP();
+        actualizarSugerenciasBarrios();
+      }
+      actualizarEstadoRed();
+      window.addEventListener('online', actualizarEstadoRed);
+      window.addEventListener('offline', actualizarEstadoRed);
+    }
+
+    function mostrarPagina(pagina) {
+      if (pagina === 'dashboard') {
+        document.getElementById('page-dashboard').classList.remove('hidden');
+        document.getElementById('page-form').classList.add('hidden');
+        renderDashboard();
+      } else {
+        document.getElementById('page-dashboard').classList.add('hidden');
+        document.getElementById('page-form').classList.remove('hidden');
+      }
+    }
+
+    function actualizarEstadoRed() {
+      const badge = document.getElementById('network-badge');
+      const text = document.getElementById('network-text');
+      if (navigator.onLine) {
+        badge.className = "text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-600 text-white flex items-center gap-1 shadow-sm";
+        text.innerText = "ONLINE";
+      } else {
+        badge.className = "text-[10px] font-bold px-2.5 py-1 rounded-full bg-brand-orange text-white flex items-center gap-1 shadow-sm";
+        text.innerText = "OFFLINE";
+      }
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      localStorage.setItem('rnp_user', email);
+      showToast(`¡Bienvenido, ${email}!`, 'success');
+      init();
+    }
+
+    function logout() {
+      localStorage.removeItem('rnp_user');
+      location.reload();
+    }
+
+    // DASHBOARD Y FILTROS
+    function renderDashboard() {
+      const records = JSON.parse(localStorage.getItem('rnp_records') || "[]");
+      
+      // Estadísticas
+      document.getElementById('stat-total').innerText = records.length;
+      document.getElementById('stat-pending').innerText = records.length;
+      document.getElementById('stat-segovia').innerText = records.filter(r => r.centroPoblado === "Segovia").length;
+      document.getElementById('stat-perez').innerText = records.filter(r => r.centroPoblado === "Los Pérez").length;
+
+      // Lista de Registros Filtrados
+      const container = document.getElementById('records-list');
+      container.innerHTML = "";
+
+      let filtrados = records;
+      if (centroFiltroActual !== 'todos') {
+        filtrados = records.filter(r => r.centroPoblado === centroFiltroActual);
+      }
+
+      if (filtrados.length === 0) {
+        container.innerHTML = `<div class="bg-white rounded-xl p-6 text-center text-xs text-brand-denim border border-brand-niebla">No hay registros guardados en esta categoría.</div>`;
+        return;
+      }
+
+      filtrados.forEach((r, idx) => {
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-xl p-4 shadow-sm border border-brand-niebla space-y-3";
+        card.innerHTML = `
+          <div class="flex justify-between items-start border-b border-slate-100 pb-2">
+            <div>
+              <span class="text-xs font-bold text-brand-real bg-brand-relajado/40 px-2 py-0.5 rounded">${r.np}</span>
+              <h3 class="text-sm font-bold text-slate-800 mt-1">${r.nombreApellidos}</h3>
+              <p class="text-[11px] text-brand-denim">${r.centroPoblado} - ${r.sectorBarrio}</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-700">Pendiente Sync</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-xs text-slate-600">
+            <div><span class="font-semibold text-brand-denim">Tipo:</span> ${r.tipoPredio}</div>
+            <div><span class="font-semibold text-brand-denim">Estado:</span> ${r.estado}</div>
+            <div><span class="font-semibold text-brand-denim">Doc:</span> ${r.documentoId}</div>
+            <div><span class="font-semibold text-brand-denim">Cel:</span> ${r.numeroCelular}</div>
+          </div>
+
+          ${r.fotoBase64 ? `<img src="${r.fotoBase64}" class="w-full h-32 object-cover rounded-lg border border-slate-100">` : ''}
+
+          <div class="pt-1 flex justify-end">
+            <button onclick="generarPDFIndividual(${idx})" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition">
+              <i class="fa-solid fa-file-pdf text-red-400"></i> Ficha PDF
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function filtrarCentro(centro) {
+      centroFiltroActual = centro;
+      document.getElementById('tab-todos').className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition " + (centro==='todos' ? "bg-brand-real text-white" : "text-brand-denim hover:bg-slate-100");
+      document.getElementById('tab-segovia').className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition " + (centro==='Segovia' ? "bg-brand-real text-white" : "text-brand-denim hover:bg-slate-100");
+      document.getElementById('tab-perez').className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition " + (centro==='Los Pérez' ? "bg-brand-real text-white" : "text-brand-denim hover:bg-slate-100");
+      renderDashboard();
+    }
+
+    // GENERACIÓN DE PDF INDIVIDUAL
+    function generarPDFIndividual(index) {
+      const records = JSON.parse(localStorage.getItem('rnp_records') || "[]");
+      const r = records[index];
+      if (!r) return;
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFillColor(43, 82, 102); // Color brand-real
+      doc.rect(0, 0, 210, 25, 'F');
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text("RNP-app - FICHA TÉCNICA DE PREDIO", 15, 16);
+
+      doc.setTextColor(40, 40, 40);
+      doc.setFontSize(12);
+      doc.text(`Consecutivo: ${r.np}`, 15, 38);
+      doc.text(`Centro Poblado: ${r.centroPoblado}`, 15, 46);
+      doc.text(`Sector / Barrio: ${r.sectorBarrio}`, 15, 54);
+      doc.text(`Coordenadas GPS: ${r.coordenadas || 'N/A'}`, 15, 62);
+
+      doc.setDrawColor(200, 200, 200);
+      doc.line(15, 68, 195, 68);
+
+      doc.text(`Propietario: ${r.nombreApellidos}`, 15, 78);
+      doc.text(`Documento ID: ${r.documentoId}`, 15, 86);
+      doc.text(`Celular: ${r.numeroCelular}`, 15, 94);
+
+      doc.line(15, 100, 195, 100);
+
+      doc.text(`Tipo de Predio: ${r.tipoPredio}`, 15, 110);
+      doc.text(`Estado del Predio: ${r.estado}`, 15, 118);
+      doc.text(`Servicios Básicos: ${r.servicios || 'Ninguno'}`, 15, 126);
+      doc.text(`Observaciones: ${r.observaciones || 'Sin observaciones'}`, 15, 134);
+
+      if (r.fotoBase64) {
+        try {
+          doc.addImage(r.fotoBase64, 'JPEG', 15, 145, 100, 75);
+        } catch(e) {
+          showToast("No se pudo adjuntar la imagen al PDF", "info");
+        }
+      }
+
+      doc.save(`Ficha_${r.np}.pdf`);
+      showToast(`PDF generado para ${r.np}`, 'success');
+    }
+
+    // CÁMARA NATIVA
+    async function abrirCamara() {
+      try {
+        const constraints = {
+          video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        };
+        mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+        const video = document.getElementById('webcam');
+        video.srcObject = mediaStream;
+        document.getElementById('camera-modal').classList.remove('hidden');
+      } catch (err) {
+        showToast("No se pudo acceder a la cámara nativa.", "error");
+      }
+    }
+
+    function cerrarCamara() {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+      }
+      document.getElementById('camera-modal').classList.add('hidden');
+    }
+
+    function tomarFotoCamara() {
+      const video = document.getElementById('webcam');
+      const canvas = document.getElementById('camera-canvas');
+      const ctx = canvas.getContext('2d');
+
+      const maxDimension = 1000;
+      let width = video.videoWidth || 800;
+      let height = video.videoHeight || 600;
+
+      if (width > height) {
+        if (width > maxDimension) { height = Math.round((height * maxDimension) / width); width = maxDimension; }
+      } else {
+        if (height > maxDimension) { width = Math.round((width * maxDimension) / height); height = maxDimension; }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(video, 0, 0, width, height);
+
+      currentFotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+      document.getElementById('foto-preview').src = currentFotoBase64;
+      const np = document.getElementById('np').value;
+      document.getElementById('foto-name').innerText = `Archivo asignado: ${np}_Fachada.jpg`;
+      document.getElementById('foto-preview-container').classList.remove('hidden');
+
+      cerrarCamara();
+      showToast("¡Fotografía capturada!", "success");
+    }
+
+    function previewFotoArchivo(e) {
+      const file = e.target.files[0];
+      if (file) {
+        showToast("Procesando archivo...", "info");
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const img = new Image();
+          img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const maxDimension = 1000;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > maxDimension) { height = Math.round((height * maxDimension) / width); width = maxDimension; }
+            } else {
+              if (height > maxDimension) { width = Math.round((width * maxDimension) / height); height = maxDimension; }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            currentFotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+            document.getElementById('foto-preview').src = currentFotoBase64;
+            const np = document.getElementById('np').value;
+            document.getElementById('foto-name').innerText = `Archivo optimizado: ${np}_Fachada.jpg`;
+            document.getElementById('foto-preview-container').classList.remove('hidden');
+            showToast("¡Imagen cargada!", "success");
+          };
+          img.src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function actualizarNP() {
+      const centro = document.getElementById('centroPoblado').value;
+      const prefijo = centro === "Segovia" ? "NP-S" : "NP-L";
+      const records = JSON.parse(localStorage.getItem('rnp_records') || "[]");
+      let maxNum = 0;
+
+      records.forEach(r => {
+        if (r.np && r.np.startsWith(prefijo)) {
+          const num = parseInt(r.np.replace(prefijo, ""), 10);
+          if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+      });
+
+      const nextNum = String(maxNum + 1).padStart(3, '0');
+      document.getElementById('np').value = `${prefijo}${nextNum}`;
+    }
+
+    function actualizarSugerenciasBarrios() {
+      const records = JSON.parse(localStorage.getItem('rnp_records') || "[]");
+      const datalist = document.getElementById('sector-list');
+      datalist.innerHTML = "";
+      const barriosUnicos = [...new Set(records.map(r => r.sectorBarrio).filter(Boolean))];
+
+      barriosUnicos.forEach(barrio => {
+        const option = document.createElement('option');
+        option.value = barrio;
+        datalist.appendChild(option);
+      });
+    }
+
+    function obtenerGPS() {
+      if ("geolocation" in navigator) {
+        showToast("Obteniendo ubicación GPS...", "info");
+        navigator.geolocation.getCurrentPosition(pos => {
+          document.getElementById('coordenadas').value = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
+          showToast("¡Coordenadas obtenidas!", "success");
+        }, err => showToast("No se pudo obtener la ubicación GPS.", "error"));
+      } else {
+        showToast("Tu dispositivo no soporta geolocalización.", "error");
+      }
+    }
+
+    function guardarPredio(e) {
+      e.preventDefault();
+      const servicios = Array.from(document.querySelectorAll('input[name="servicio"]:checked')).map(c => c.value).join(", ");
+      const np = document.getElementById('np').value;
+
+      const record = {
+        np: np,
+        centroPoblado: document.getElementById('centroPoblado').value,
+        sectorBarrio: document.getElementById('sectorBarrio').value,
+        coordenadas: document.getElementById('coordenadas').value,
+        tipoPredio: document.getElementById('tipoPredio').value,
+        estado: document.getElementById('estado').value,
+        servicios: servicios,
+        nombreApellidos: document.getElementById('nombreApellidos').value,
+        documentoId: document.getElementById('documentoId').value,
+        numeroCelular: document.getElementById('numeroCelular').value,
+        observaciones: document.getElementById('observaciones').value,
+        fotoBase64: currentFotoBase64,
+        fotoNombre: `${np}_Fachada.jpg`
+      };
+
+      try {
+        const records = JSON.parse(localStorage.getItem('rnp_records') || "[]");
+        records.push(record);
+        localStorage.setItem('rnp_records', JSON.stringify(records));
+
+        showToast(`¡Predio ${np} guardado localmente!`, "success");
+        document.getElementById('predio-form').reset();
+        document.getElementById('foto-preview-container').classList.add('hidden');
+        currentFotoBase64 = "";
+        actualizarNP();
+        actualizarSugerenciasBarrios();
+        mostrarPagina('dashboard');
+      } catch (err) {
+        showToast("Memoria llena. Sincroniza los datos guardados.", "error");
+      }
+    }
+
+    async function syncData() {
+      const records = JSON.parse(localStorage.getItem('rnp_records') || "[]");
+      if (records.length === 0) {
+        showToast("No hay datos pendientes por sincronizar.", "info");
+        return;
+      }
+
+      if (SCRIPT_URL === "TU_SCRIPT_URL_AQUI") {
+        showToast("Configura tu URL de Google Apps Script.", "error");
+        return;
+      }
+
+      const btn = document.getElementById('sync-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-rotate fa-spin"></i> Sincronizando...';
+      showToast("Subiendo registros a la nube...", "info");
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify({ action: "sync_records", records: records })
+        });
+
+        const result = await res.json();
+        if (result.status === "success") {
+          localStorage.removeItem('rnp_records');
+          renderDashboard();
+          actualizarNP();
+          actualizarSugerenciasBarrios();
+          showToast("¡Sincronización exitosa y memoria limpiada!", "success");
+        } else {
+          showToast("Error del servidor: " + result.message, "error");
+        }
+      } catch (err) {
+        showToast("Error de red. Revisa tu conexión.", "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sincronizar';
+      }
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
