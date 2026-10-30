@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="overflow-x-hidden">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>RNP-app Registro de Nuevos Predios</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -30,36 +30,36 @@
   </script>
   <style>
     @keyframes slideDown {
-      from { transform: translate(-50%, -20px); opacity: 0; }
-      to { transform: translate(-50%, 0); opacity: 1; }
+      from { transform: translateY(-15px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
     .toast-animate {
-      animation: slideDown 0.3s ease-out forwards;
+      animation: slideDown 0.25s ease-out forwards;
     }
   </style>
 </head>
-<body class="bg-brand-neutro text-slate-800 font-sans min-h-screen pb-12">
+<body class="bg-brand-neutro text-slate-800 font-sans min-h-screen pb-12 overflow-x-hidden">
 
   <!-- CONFIGURACIÓN DE SCRIPT URL -->
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSwQfabv0oQDczx_i119-Oj3KrRnXjnvwpN23SvKxoPpgUQ_EXaqlPYQYcHLylBokM/exec"; // Reemplaza por tu URL de Google Apps Script (/exec)
   </script>
 
-  <!-- CONTENEDOR DE TOASTS ABSOLUTAMENTE CENTRADOS -->
-  <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 pointer-events-none w-11/12 max-w-sm"></div>
+  <!-- CONTENEDOR DE TOASTS PERFECTAMENTE CENTRADOS -->
+  <div id="toast-container" class="fixed top-3 inset-x-0 mx-auto z-50 flex flex-col items-center gap-2 pointer-events-none w-[90%] max-w-xs"></div>
 
   <!-- MODAL PARA CAPTURA DE CÁMARA EN VIVO -->
-  <div id="camera-modal" class="fixed inset-0 bg-black bg-opacity-90 z-50 hidden flex flex-col items-center justify-between p-4">
+  <div id="camera-modal" class="fixed inset-0 bg-black bg-opacity-95 z-50 hidden flex flex-col items-center justify-between p-3">
     <div class="w-full max-w-md flex justify-between items-center text-white p-2">
-      <span class="text-sm font-semibold">Capturar Fotografía</span>
+      <span class="text-xs font-semibold uppercase tracking-wider">Capturar Fotografía</span>
       <button type="button" onclick="cerrarCamara()" class="text-white text-xl p-2"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div class="relative w-full max-w-md flex-1 flex items-center justify-center overflow-hidden rounded-2xl bg-black">
+    <div class="relative w-full max-w-md flex-1 flex items-center justify-center overflow-hidden rounded-2xl bg-black my-2">
       <video id="webcam" autoplay playsinline class="w-full h-full object-cover"></video>
       <canvas id="camera-canvas" class="hidden"></canvas>
     </div>
-    <div class="w-full max-w-md py-4 flex justify-center items-center">
-      <button type="button" onclick="tomarFotoCamara()" class="w-16 h-16 rounded-full bg-white border-4 border-brand-orange flex items-center justify-center text-brand-orange text-2xl shadow-lg active:scale-90 transition">
+    <div class="w-full max-w-md py-2 flex justify-center items-center">
+      <button type="button" onclick="tomarFotoCamara()" class="w-14 h-14 rounded-full bg-white border-4 border-brand-orange flex items-center justify-center text-brand-orange text-xl shadow-lg active:scale-90 transition">
         <i class="fa-solid fa-camera"></i>
       </button>
     </div>
@@ -95,65 +95,65 @@
   </div>
 
   <!-- INTERFAZ PRINCIPAL -->
-  <div id="main-app" class="hidden">
+  <div id="main-app" class="hidden min-h-screen">
     <!-- Header -->
-    <header class="bg-brand-real text-white p-4 shadow-md sticky top-0 z-40">
+    <header class="bg-brand-real text-white p-3.5 shadow-md sticky top-0 z-40 w-full">
       <div class="max-w-md mx-auto flex justify-between items-center">
         <div>
-          <h1 class="text-lg font-bold tracking-wide">RNP-app</h1>
-          <p class="text-xs text-brand-relajado" id="user-display">Usuario</p>
+          <h1 class="text-base font-bold tracking-wide leading-tight">RNP-app</h1>
+          <p class="text-[11px] text-brand-relajado truncate max-w-[140px]" id="user-display">Usuario</p>
         </div>
         <div class="flex items-center gap-2">
           <span id="network-badge" class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-600 text-white flex items-center gap-1 shadow-sm">
             <span id="network-dot" class="w-2 h-2 rounded-full bg-white animate-pulse"></span> <span id="network-text">ONLINE</span>
           </span>
-          <button onclick="logout()" class="text-xs bg-slate-800/40 hover:bg-slate-900/60 text-white px-3 py-1.5 rounded-lg border border-brand-denim/40">
+          <button onclick="logout()" class="text-xs bg-slate-800/40 hover:bg-slate-900/60 text-white px-2.5 py-1.5 rounded-lg border border-brand-denim/40">
             <i class="fa-solid fa-right-from-bracket"></i>
           </button>
         </div>
       </div>
     </header>
 
-    <div class="max-w-md mx-auto p-4">
+    <div class="max-w-md mx-auto p-3.5 w-full box-border">
 
       <!-- ================= PÁGINA 1: DASHBOARD ================= -->
-      <div id="page-dashboard" class="space-y-5">
+      <div id="page-dashboard" class="space-y-4">
         
         <!-- Acciones Principales y Sincronización -->
         <div class="flex items-center justify-between gap-2">
-          <button onclick="mostrarPagina('form')" class="flex-1 bg-brand-real hover:bg-slate-800 text-white py-3 px-4 rounded-xl text-sm font-bold shadow transition flex items-center justify-center gap-2 active:scale-95">
+          <button onclick="mostrarPagina('form')" class="flex-1 bg-brand-real hover:bg-slate-800 text-white py-2.5 px-3 rounded-xl text-xs font-bold shadow transition flex items-center justify-center gap-1.5 active:scale-95">
             <i class="fa-solid fa-plus text-brand-relajado"></i> Nuevo Registro
           </button>
-          <button onclick="syncData()" id="sync-btn" class="bg-brand-orange hover:bg-brand-orangeHover text-white py-3 px-4 rounded-xl text-sm font-bold shadow flex items-center justify-center gap-2 transition active:scale-95">
+          <button onclick="syncData()" id="sync-btn" class="bg-brand-orange hover:bg-brand-orangeHover text-white py-2.5 px-3 rounded-xl text-xs font-bold shadow flex items-center justify-center gap-1.5 transition active:scale-95">
             <i class="fa-solid fa-rotate"></i> Sincronizar
           </button>
         </div>
 
         <!-- Tarjetas Estadísticas -->
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-2.5">
           <div class="bg-white rounded-xl p-3 shadow-sm border border-brand-niebla">
-            <span class="text-[10px] font-bold uppercase text-brand-denim block">Total Predios</span>
-            <span id="stat-total" class="text-2xl font-black text-brand-real">0</span>
+            <span class="text-[10px] font-bold uppercase text-brand-denim block truncate">Total Predios</span>
+            <span id="stat-total" class="text-xl font-black text-brand-real">0</span>
           </div>
           <div class="bg-white rounded-xl p-3 shadow-sm border border-brand-niebla">
-            <span class="text-[10px] font-bold uppercase text-brand-denim block">Pendientes Sync</span>
-            <span id="stat-pending" class="text-2xl font-black text-brand-orange">0</span>
+            <span class="text-[10px] font-bold uppercase text-brand-denim block truncate">Pendientes Sync</span>
+            <span id="stat-pending" class="text-xl font-black text-brand-orange">0</span>
           </div>
           <div class="bg-white rounded-xl p-3 shadow-sm border border-brand-niebla">
-            <span class="text-[10px] font-bold uppercase text-brand-denim block">Segovia (NP-S)</span>
-            <span id="stat-segovia" class="text-2xl font-black text-slate-700">0</span>
+            <span class="text-[10px] font-bold uppercase text-brand-denim block truncate">Segovia (NP-S)</span>
+            <span id="stat-segovia" class="text-xl font-black text-slate-700">0</span>
           </div>
           <div class="bg-white rounded-xl p-3 shadow-sm border border-brand-niebla">
-            <span class="text-[10px] font-bold uppercase text-brand-denim block">Los Pérez (NP-L)</span>
-            <span id="stat-perez" class="text-2xl font-black text-slate-700">0</span>
+            <span class="text-[10px] font-bold uppercase text-brand-denim block truncate">Los Pérez (NP-L)</span>
+            <span id="stat-perez" class="text-xl font-black text-slate-700">0</span>
           </div>
         </div>
 
         <!-- Filtro por Pestañas (Cards Separados) -->
-        <div class="bg-white rounded-xl p-1.5 shadow-sm border border-brand-niebla flex gap-1">
-          <button onclick="filtrarCentro('todos')" id="tab-todos" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition bg-brand-real text-white">Todos</button>
-          <button onclick="filtrarCentro('Segovia')" id="tab-segovia" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition text-brand-denim hover:bg-slate-100">Segovia</button>
-          <button onclick="filtrarCentro('Los Pérez')" id="tab-perez" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition text-brand-denim hover:bg-slate-100">Los Pérez</button>
+        <div class="bg-white rounded-xl p-1 shadow-sm border border-brand-niebla flex gap-1">
+          <button onclick="filtrarCentro('todos')" id="tab-todos" class="flex-1 py-1.5 text-[11px] font-bold rounded-lg transition bg-brand-real text-white">Todos</button>
+          <button onclick="filtrarCentro('Segovia')" id="tab-segovia" class="flex-1 py-1.5 text-[11px] font-bold rounded-lg transition text-brand-denim hover:bg-slate-100">Segovia</button>
+          <button onclick="filtrarCentro('Los Pérez')" id="tab-perez" class="flex-1 py-1.5 text-[11px] font-bold rounded-lg transition text-brand-denim hover:bg-slate-100">Los Pérez</button>
         </div>
 
         <!-- Lista de Registros -->
@@ -165,54 +165,54 @@
 
 
       <!-- ================= PÁGINA 2: FORMULARIO DE REGISTRO ================= -->
-      <div id="page-form" class="hidden space-y-4">
+      <div id="page-form" class="hidden space-y-3">
         
-        <button onclick="mostrarPagina('dashboard')" class="text-xs font-bold text-brand-real hover:underline flex items-center gap-1">
+        <button onclick="mostrarPagina('dashboard')" class="text-xs font-bold text-brand-real hover:underline flex items-center gap-1 py-1">
           <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard
         </button>
 
-        <form id="predio-form" onsubmit="guardarPredio(event)" class="bg-white rounded-2xl shadow-sm border border-brand-niebla p-5 space-y-4">
+        <form id="predio-form" onsubmit="guardarPredio(event)" class="bg-white rounded-2xl shadow-sm border border-brand-niebla p-4 space-y-3.5">
           
-          <h2 class="text-sm font-bold text-brand-real uppercase tracking-wider border-b border-brand-niebla/40 pb-2">Formulario de Registro</h2>
+          <h2 class="text-xs font-bold text-brand-real uppercase tracking-wider border-b border-brand-niebla/40 pb-2">Formulario de Registro</h2>
 
           <!-- Centro Poblado y NP -->
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-2 gap-2.5">
             <div>
-              <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Centro Poblado</label>
-              <select id="centroPoblado" onchange="actualizarNP()" class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm font-medium bg-slate-50">
+              <label class="block text-[10px] font-semibold text-brand-denim uppercase mb-1">Centro Poblado</label>
+              <select id="centroPoblado" onchange="actualizarNP()" class="w-full border border-brand-niebla rounded-lg p-2 text-xs font-medium bg-slate-50">
                 <option value="Segovia">Segovia</option>
                 <option value="Los Pérez">Los Pérez</option>
               </select>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Consecutivo NP</label>
-              <input type="text" id="np" readonly class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm font-bold bg-brand-relajado/30 text-brand-real">
+              <label class="block text-[10px] font-semibold text-brand-denim uppercase mb-1">Consecutivo NP</label>
+              <input type="text" id="np" readonly class="w-full border border-brand-niebla rounded-lg p-2 text-xs font-bold bg-brand-relajado/30 text-brand-real">
             </div>
           </div>
 
           <!-- Sector / Barrio (Dinámico) -->
           <div>
-            <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Sector / Barrio</label>
-            <input type="text" id="sectorBarrio" list="sector-list" required placeholder="Escribe o selecciona sector..." class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-real">
+            <label class="block text-[10px] font-semibold text-brand-denim uppercase mb-1">Sector / Barrio</label>
+            <input type="text" id="sectorBarrio" list="sector-list" required placeholder="Escribe o selecciona sector..." class="w-full border border-brand-niebla rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-real">
             <datalist id="sector-list"></datalist>
           </div>
 
           <!-- Coordenadas GPS -->
           <div>
-            <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Coordenadas GPS</label>
+            <label class="block text-[10px] font-semibold text-brand-denim uppercase mb-1">Coordenadas GPS</label>
             <div class="flex gap-2">
-              <input type="text" id="coordenadas" placeholder="0.0000, -0.0000" class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm bg-slate-50" readonly>
-              <button type="button" onclick="obtenerGPS()" class="bg-brand-real hover:bg-slate-800 text-white px-3 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-1 transition active:scale-95">
+              <input type="text" id="coordenadas" placeholder="0.0000, -0.0000" class="w-full border border-brand-niebla rounded-lg p-2 text-xs bg-slate-50" readonly>
+              <button type="button" onclick="obtenerGPS()" class="bg-brand-real hover:bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1 transition active:scale-95 shrink-0">
                 <i class="fa-solid fa-location-crosshairs"></i> GPS
               </button>
             </div>
           </div>
 
           <!-- Tipo y Estado -->
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-2 gap-2.5">
             <div>
-              <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Tipo Predio</label>
-              <select id="tipoPredio" class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm">
+              <label class="block text-[10px] font-semibold text-brand-denim uppercase mb-1">Tipo Predio</label>
+              <select id="tipoPredio" class="w-full border border-brand-niebla rounded-lg p-2 text-xs">
                 <option value="Residencial">Residencial</option>
                 <option value="Comercial">Comercial</option>
                 <option value="Mixto">Mixto</option>
@@ -222,8 +222,8 @@
               </select>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Estado</label>
-              <select id="estado" class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm">
+              <label class="block text-[10px] font-semibold text-brand-denim uppercase mb-1">Estado</label>
+              <select id="estado" class="w-full border border-brand-niebla rounded-lg p-2 text-xs">
                 <option value="Bueno">Bueno</option>
                 <option value="Regular">Regular</option>
                 <option value="Malo">Malo</option>
@@ -234,61 +234,61 @@
 
           <!-- Servicios Básicos -->
           <div>
-            <label class="block text-xs font-semibold text-brand-denim uppercase mb-2">Servicios Básicos</label>
-            <div class="grid grid-cols-2 gap-2 text-sm">
-              <label class="flex items-center gap-2 border border-brand-niebla/60 p-2 rounded-lg bg-slate-50/50"><input type="checkbox" name="servicio" value="Agua"> Agua</label>
-              <label class="flex items-center gap-2 border border-brand-niebla/60 p-2 rounded-lg bg-slate-50/50"><input type="checkbox" name="servicio" value="Luz"> Luz</label>
-              <label class="flex items-center gap-2 border border-brand-niebla/60 p-2 rounded-lg bg-slate-50/50"><input type="checkbox" name="servicio" value="Alcantarillado"> Alcantarillado</label>
-              <label class="flex items-center gap-2 border border-brand-niebla/60 p-2 rounded-lg bg-slate-50/50"><input type="checkbox" name="servicio" value="Gas"> Gas</label>
+            <label class="block text-[10px] font-semibold text-brand-denim uppercase mb-1.5">Servicios Básicos</label>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <label class="flex items-center gap-1.5 border border-brand-niebla/60 p-2 rounded-lg bg-slate-50/50"><input type="checkbox" name="servicio" value="Agua"> Agua</label>
+              <label class="flex items-center gap-1.5 border border-brand-niebla/60 p-2 rounded-lg bg-slate-50/50"><input type="checkbox" name="servicio" value="Luz"> Luz</label>
+              <label class="flex items-center gap-1.5 border border-brand-niebla/60 p-2 rounded-lg bg-slate-50/50"><input type="checkbox" name="servicio" value="Alcantarillado"> Alcantarillado</label>
+              <label class="flex items-center gap-1.5 border border-brand-niebla/60 p-2 rounded-lg bg-slate-50/50"><input type="checkbox" name="servicio" value="Gas"> Gas</label>
             </div>
           </div>
 
           <!-- Propietario -->
           <div>
-            <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Nombre y Apellidos</label>
-            <input type="text" id="nombreApellidos" required class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm">
+            <label class="block text-[10px] font-semibold text-brand-denim uppercase mb-1">Nombre y Apellidos</label>
+            <input type="text" id="nombreApellidos" required class="w-full border border-brand-niebla rounded-lg p-2 text-xs">
           </div>
 
           <!-- Documento y Celular -->
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-2 gap-2.5">
             <div>
-              <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Documento ID</label>
-              <input type="number" id="documentoId" required class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm">
+              <label class="block text-[10px] font-semibold text-brand-denim uppercase mb-1">Documento ID</label>
+              <input type="number" id="documentoId" required class="w-full border border-brand-niebla rounded-lg p-2 text-xs">
             </div>
             <div>
-              <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Celular</label>
-              <input type="tel" id="numeroCelular" required class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm">
+              <label class="block text-[10px] font-semibold text-brand-denim uppercase mb-1">Celular</label>
+              <input type="tel" id="numeroCelular" required class="w-full border border-brand-niebla rounded-lg p-2 text-xs">
             </div>
           </div>
 
           <!-- Observaciones -->
           <div>
-            <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Observaciones</label>
-            <textarea id="observaciones" rows="2" class="w-full border border-brand-niebla rounded-lg p-2.5 text-sm"></textarea>
+            <label class="block text-[10px] font-semibold text-brand-denim uppercase mb-1">Observaciones</label>
+            <textarea id="observaciones" rows="2" class="w-full border border-brand-niebla rounded-lg p-2 text-xs"></textarea>
           </div>
 
           <!-- Registro Fotográfico -->
           <div>
-            <label class="block text-xs font-semibold text-brand-denim uppercase mb-1">Registro Fotográfico</label>
+            <label class="block text-[10px] font-semibold text-brand-denim uppercase mb-1">Registro Fotográfico</label>
             <input type="file" id="fotoFileInput" accept="image/*" onchange="previewFotoArchivo(event)" class="hidden">
             
             <div class="grid grid-cols-2 gap-2">
-              <button type="button" onclick="abrirCamara()" class="bg-brand-real hover:bg-slate-800 text-white py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow transition active:scale-95">
-                <i class="fa-solid fa-camera text-brand-relajado text-base"></i> Abrir Cámara
+              <button type="button" onclick="abrirCamara()" class="bg-brand-real hover:bg-slate-800 text-white py-2 px-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow transition active:scale-95">
+                <i class="fa-solid fa-camera text-brand-relajado"></i> Abrir Cámara
               </button>
-              <button type="button" onclick="document.getElementById('fotoFileInput').click()" class="bg-slate-100 hover:bg-slate-200 text-brand-real border border-brand-niebla py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition active:scale-95">
-                <i class="fa-solid fa-folder-open text-brand-denim text-base"></i> Subir Archivo
+              <button type="button" onclick="document.getElementById('fotoFileInput').click()" class="bg-slate-100 hover:bg-slate-200 text-brand-real border border-brand-niebla py-2 px-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm transition active:scale-95">
+                <i class="fa-solid fa-folder-open text-brand-denim"></i> Subir Archivo
               </button>
             </div>
 
-            <div id="foto-preview-container" class="hidden mt-3">
-              <img id="foto-preview" class="w-full h-40 object-cover rounded-lg border border-brand-niebla">
-              <p id="foto-name" class="text-xs text-brand-denim mt-1 italic text-center"></p>
+            <div id="foto-preview-container" class="hidden mt-2.5">
+              <img id="foto-preview" class="w-full h-36 object-cover rounded-lg border border-brand-niebla">
+              <p id="foto-name" class="text-[11px] text-brand-denim mt-1 italic text-center truncate"></p>
             </div>
           </div>
 
           <!-- Botón Guardar -->
-          <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-xl text-sm shadow transition flex items-center justify-center gap-2 active:scale-95">
+          <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-xl text-xs shadow transition flex items-center justify-center gap-2 active:scale-95">
             <i class="fa-solid fa-floppy-disk"></i> Guardar Registro Local
           </button>
         </form>
@@ -303,29 +303,30 @@
     let mediaStream = null;
     let centroFiltroActual = "todos";
 
+    // TOASTS ROBUSTOS Y PERFECTAMENTE CENTRADOS EN MÓVIL
     function showToast(message, type = 'success') {
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
       let bgColors = 'bg-brand-real text-white border-brand-denim';
-      let icon = '<i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>';
+      let icon = '<i class="fa-solid fa-circle-check text-emerald-400 text-base shrink-0"></i>';
 
       if (type === 'error') {
         bgColors = 'bg-red-900 text-white border-red-700';
-        icon = '<i class="fa-solid fa-triangle-exclamation text-brand-orange text-lg"></i>';
+        icon = '<i class="fa-solid fa-triangle-exclamation text-brand-orange text-base shrink-0"></i>';
       } else if (type === 'info') {
         bgColors = 'bg-slate-800 text-white border-brand-niebla';
-        icon = '<i class="fa-solid fa-circle-info text-brand-relajado text-lg"></i>';
+        icon = '<i class="fa-solid fa-circle-info text-brand-relajado text-base shrink-0"></i>';
       }
 
-      toast.className = `pointer-events-auto flex items-center justify-center text-center gap-3 px-4 py-3 rounded-xl shadow-xl border text-sm font-medium toast-animate ${bgColors} w-full`;
-      toast.innerHTML = `${icon} <span>${message}</span>`;
+      toast.className = `pointer-events-auto flex items-center justify-center text-center gap-2 px-3 py-2.5 rounded-xl shadow-xl border text-xs font-medium toast-animate ${bgColors} w-full box-border`;
+      toast.innerHTML = `${icon} <span class="break-words text-wrap max-w-full">${message}</span>`;
       container.appendChild(toast);
 
       setTimeout(() => {
         toast.style.opacity = '0';
-        toast.style.transition = 'opacity 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-      }, 3500);
+        toast.style.transition = 'opacity 0.25s ease';
+        setTimeout(() => toast.remove(), 250);
+      }, 3000);
     }
 
     function init() {
@@ -379,17 +380,17 @@
       location.reload();
     }
 
-    // DASHBOARD Y FILTROS
+    // DASHBOARD Y CARGA GARANTIZADA DE REGISTROS
     function renderDashboard() {
       const records = JSON.parse(localStorage.getItem('rnp_records') || "[]");
       
-      // Estadísticas
+      // Actualizar Estadísticas
       document.getElementById('stat-total').innerText = records.length;
       document.getElementById('stat-pending').innerText = records.length;
       document.getElementById('stat-segovia').innerText = records.filter(r => r.centroPoblado === "Segovia").length;
       document.getElementById('stat-perez').innerText = records.filter(r => r.centroPoblado === "Los Pérez").length;
 
-      // Lista de Registros Filtrados
+      // Renderizado de Lista
       const container = document.getElementById('records-list');
       container.innerHTML = "";
 
@@ -399,34 +400,34 @@
       }
 
       if (filtrados.length === 0) {
-        container.innerHTML = `<div class="bg-white rounded-xl p-6 text-center text-xs text-brand-denim border border-brand-niebla">No hay registros guardados en esta categoría.</div>`;
+        container.innerHTML = `<div class="bg-white rounded-xl p-5 text-center text-xs text-brand-denim border border-brand-niebla">No hay registros guardados en esta categoría.</div>`;
         return;
       }
 
       filtrados.forEach((r, idx) => {
         const card = document.createElement('div');
-        card.className = "bg-white rounded-xl p-4 shadow-sm border border-brand-niebla space-y-3";
+        card.className = "bg-white rounded-xl p-3.5 shadow-sm border border-brand-niebla space-y-2.5 w-full box-border";
         card.innerHTML = `
           <div class="flex justify-between items-start border-b border-slate-100 pb-2">
-            <div>
-              <span class="text-xs font-bold text-brand-real bg-brand-relajado/40 px-2 py-0.5 rounded">${r.np}</span>
-              <h3 class="text-sm font-bold text-slate-800 mt-1">${r.nombreApellidos}</h3>
-              <p class="text-[11px] text-brand-denim">${r.centroPoblado} - ${r.sectorBarrio}</p>
+            <div class="max-w-[70%]">
+              <span class="text-[11px] font-bold text-brand-real bg-brand-relajado/40 px-2 py-0.5 rounded">${r.np}</span>
+              <h3 class="text-xs font-bold text-slate-800 mt-1 truncate">${r.nombreApellidos}</h3>
+              <p class="text-[10px] text-brand-denim truncate">${r.centroPoblado} - ${r.sectorBarrio}</p>
             </div>
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-700">Pendiente Sync</span>
+            <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 shrink-0">Pendiente Sync</span>
           </div>
 
-          <div class="grid grid-cols-2 gap-2 text-xs text-slate-600">
-            <div><span class="font-semibold text-brand-denim">Tipo:</span> ${r.tipoPredio}</div>
-            <div><span class="font-semibold text-brand-denim">Estado:</span> ${r.estado}</div>
-            <div><span class="font-semibold text-brand-denim">Doc:</span> ${r.documentoId}</div>
-            <div><span class="font-semibold text-brand-denim">Cel:</span> ${r.numeroCelular}</div>
+          <div class="grid grid-cols-2 gap-1.5 text-[11px] text-slate-600">
+            <div class="truncate"><span class="font-semibold text-brand-denim">Tipo:</span> ${r.tipoPredio}</div>
+            <div class="truncate"><span class="font-semibold text-brand-denim">Estado:</span> ${r.estado}</div>
+            <div class="truncate"><span class="font-semibold text-brand-denim">Doc:</span> ${r.documentoId}</div>
+            <div class="truncate"><span class="font-semibold text-brand-denim">Cel:</span> ${r.numeroCelular}</div>
           </div>
 
-          ${r.fotoBase64 ? `<img src="${r.fotoBase64}" class="w-full h-32 object-cover rounded-lg border border-slate-100">` : ''}
+          ${r.fotoBase64 ? `<img src="${r.fotoBase64}" class="w-full h-28 object-cover rounded-lg border border-slate-100">` : ''}
 
           <div class="pt-1 flex justify-end">
-            <button onclick="generarPDFIndividual(${idx})" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition">
+            <button onclick="generarPDFIndividual(${idx})" class="bg-slate-800 hover:bg-slate-900 text-white px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition">
               <i class="fa-solid fa-file-pdf text-red-400"></i> Ficha PDF
             </button>
           </div>
@@ -437,9 +438,9 @@
 
     function filtrarCentro(centro) {
       centroFiltroActual = centro;
-      document.getElementById('tab-todos').className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition " + (centro==='todos' ? "bg-brand-real text-white" : "text-brand-denim hover:bg-slate-100");
-      document.getElementById('tab-segovia').className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition " + (centro==='Segovia' ? "bg-brand-real text-white" : "text-brand-denim hover:bg-slate-100");
-      document.getElementById('tab-perez').className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition " + (centro==='Los Pérez' ? "bg-brand-real text-white" : "text-brand-denim hover:bg-slate-100");
+      document.getElementById('tab-todos').className = "flex-1 py-1.5 text-[11px] font-bold rounded-lg transition " + (centro==='todos' ? "bg-brand-real text-white" : "text-brand-denim hover:bg-slate-100");
+      document.getElementById('tab-segovia').className = "flex-1 py-1.5 text-[11px] font-bold rounded-lg transition " + (centro==='Segovia' ? "bg-brand-real text-white" : "text-brand-denim hover:bg-slate-100");
+      document.getElementById('tab-perez').className = "flex-1 py-1.5 text-[11px] font-bold rounded-lg transition " + (centro==='Los Pérez' ? "bg-brand-real text-white" : "text-brand-denim hover:bg-slate-100");
       renderDashboard();
     }
 
@@ -452,16 +453,16 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
 
-      doc.setFillColor(43, 82, 102); // Color brand-real
+      doc.setFillColor(43, 82, 102);
       doc.rect(0, 0, 210, 25, 'F');
 
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(16);
+      doc.setFontSize(15);
       doc.setFont('helvetica', 'bold');
       doc.text("RNP-app - FICHA TÉCNICA DE PREDIO", 15, 16);
 
       doc.setTextColor(40, 40, 40);
-      doc.setFontSize(12);
+      doc.setFontSize(11);
       doc.text(`Consecutivo: ${r.np}`, 15, 38);
       doc.text(`Centro Poblado: ${r.centroPoblado}`, 15, 46);
       doc.text(`Sector / Barrio: ${r.sectorBarrio}`, 15, 54);
@@ -485,7 +486,7 @@
         try {
           doc.addImage(r.fotoBase64, 'JPEG', 15, 145, 100, 75);
         } catch(e) {
-          showToast("No se pudo adjuntar la imagen al PDF", "info");
+          showToast("No se adjuntó la imagen al PDF", "info");
         }
       }
 
@@ -692,7 +693,7 @@
           renderDashboard();
           actualizarNP();
           actualizarSugerenciasBarrios();
-          showToast("¡Sincronización exitosa y memoria limpiada!", "success");
+          showToast("¡Sincronización exitosa!", "success");
         } else {
           showToast("Error del servidor: " + result.message, "error");
         }
